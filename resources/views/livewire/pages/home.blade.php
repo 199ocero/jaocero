@@ -1,47 +1,61 @@
+@php
+    $hero = config('portfolio.hero');
+    $greeting = str_replace('{name}', config('portfolio.owner_name'), (string) $hero['greeting']);
+    $headline = \App\Support\Highlight::mark(config('portfolio.headline'), config('portfolio.headline_highlight'));
+@endphp
+
 <div class="flex flex-col gap-28 overflow-x-clip pb-28">
     <section class="pt-16 sm:pt-28">
         <x-container class="relative max-w-4xl">
-            {{-- Decorations (desktop): doodles that draw in and a wandering design-tool cursor. --}}
-            <div class="pointer-events-none absolute inset-0 hidden md:block" aria-hidden="true" data-reveal>
+            {{-- Decorations (desktop): doodles that draw in and a wandering design-tool cursor, which glides over the headline. --}}
+            <div class="pointer-events-none absolute inset-0 z-10 hidden md:block" aria-hidden="true" data-reveal>
                 <x-doodles.sparkle class="absolute -top-10 right-24 size-11 text-accent motion-safe:animate-float" style="--tilt: 10deg" />
                 <x-doodles.burst class="absolute -top-4 right-8 size-8 text-subtle/70" style="--draw-delay: 900ms" />
                 <x-doodles.spiral class="absolute top-52 -left-24 size-14 text-subtle/60" style="--draw-delay: 1200ms" />
-                <x-design-cursor class="absolute top-10 right-0 motion-safe:animate-cursor" label="you?" />
+                @if (filled($hero['cursor_label']))
+                    <x-design-cursor class="absolute top-10 right-0 motion-safe:animate-cursor" :label="$hero['cursor_label']" />
+                @endif
             </div>
 
             <div class="relative">
-                <x-hand-note arrow="after" class="mb-1 -rotate-3 sm:absolute sm:-top-9 sm:-left-14">hi there!</x-hand-note>
+                @if (filled($hero['note']))
+                    <x-hand-note arrow="after" class="mb-1 -rotate-3 sm:absolute sm:-top-9 sm:-left-14">{{ $hero['note'] }}</x-hand-note>
+                @endif
 
                 <h1 class="text-[clamp(2.4rem,6.2vw,4.6rem)] leading-[1.06] font-extrabold tracking-[-0.045em]">
-                    <x-reveal-text :text="'Hi, I\'m '.config('portfolio.owner_name').' — '.config('portfolio.headline')" />
+                    <x-reveal-text :text="trim($greeting.' '.$headline)" />
                 </h1>
             </div>
 
             <div class="mt-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
                 <p class="max-w-xl text-lg text-pretty text-muted sm:text-xl motion-safe:animate-fade-up motion-safe:[animation-delay:700ms]">{{ config('portfolio.tagline') }}</p>
-                <x-hand-note class="shrink-0 rotate-2 self-end text-accent motion-safe:animate-fade-up motion-safe:[animation-delay:1000ms]">
-                    psst… ask my AI anything
-                    <x-scribble-arrow class="ml-1 inline w-9 rotate-[70deg] text-accent/80 motion-safe:animate-wiggle" />
-                </x-hand-note>
+                @if (filled($hero['chat_note']))
+                    <x-hand-note class="shrink-0 rotate-2 self-end text-accent motion-safe:animate-fade-up motion-safe:[animation-delay:1000ms]">
+                        {{ $hero['chat_note'] }}
+                        <x-scribble-arrow class="ml-1 inline w-9 rotate-[70deg] text-accent/80 motion-safe:animate-wiggle" />
+                    </x-hand-note>
+                @endif
             </div>
         </x-container>
 
         <x-container class="relative mt-6 max-w-4xl motion-safe:animate-fade-up motion-safe:[animation-delay:850ms]">
             {{-- Tappable skill stickers floating around the chat (large screens). --}}
-            @foreach (array_slice($stickers, 0, 4) as $index => $sticker)
+            @foreach ($stickers as $index => $sticker)
                 <x-sticker
                     @class([
-                        'absolute z-10 hidden xl:block',
+                        'absolute z-10 hidden',
+                        'xl:block' => $hero['stickers']['breakpoint'] === 'xl',
+                        '2xl:block' => $hero['stickers']['breakpoint'] === '2xl',
                         'top-20 -left-28' => $index === 0,
                         'top-28 -right-24' => $index === 1,
                         'bottom-28 -left-28' => $index === 2,
                         '-right-16 -bottom-6' => $index === 3,
                     ])
                     :tilt="['-8deg', '7deg', '5deg', '-6deg'][$index]"
-                    :color="['sky', 'amber', 'lime', 'rose'][$index]"
+                    :color="$sticker['color']"
                     :delay="($index * 0.7).'s'"
                     wire:key="sticker-{{ $index }}"
-                >{{ $sticker }}</x-sticker>
+                >{{ $sticker['text'] }}</x-sticker>
             @endforeach
 
             <div id="chat">

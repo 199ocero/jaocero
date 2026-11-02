@@ -32,3 +32,30 @@ it('renders without a close button in the home page hero', function () {
         ->assertDontSee('Close chat')
         ->assertSee('id="chat-input"', false);
 });
+
+it('hides the floating chat when it is turned off in the settings', function () {
+    config()->set('portfolio.chat_widget.enabled', false);
+
+    $this->get(route('about'))->assertDontSee('chat-widget-panel', false);
+});
+
+it('shows the button label and note from the settings', function () {
+    config()->set('portfolio.chat_widget.label', 'Chat with me');
+    config()->set('portfolio.chat_widget.note', 'say hi!');
+
+    $this->get(route('about'))
+        ->assertSee('Chat with me')
+        ->assertSee('say hi!');
+});
+
+it('hides the note when it is empty', function () {
+    config()->set('portfolio.chat_widget.note', null);
+
+    $this->get(route('about'))->assertDontSee('psst… still here');
+});
+
+it('can sit in the bottom left corner', function () {
+    config()->set('portfolio.chat_widget.position', 'bottom-left');
+
+    $this->get(route('about'))->assertSee('left-4 items-start', false);
+});

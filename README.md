@@ -4,7 +4,7 @@ An open-source developer portfolio with a built-in AI assistant. Visitors can br
 
 **Live site:** [jaocero.dev](https://jaocero.dev)
 
-Built with Laravel, Livewire, Filament and the Laravel AI SDK. Fork it, edit your `.env`, fill in your content at `/admin`, and you have your own.
+Built with Laravel, Livewire, Filament and the Laravel AI SDK. Fork it, add your AI key to `.env`, fill in your settings and content at `/admin`, and you have your own.
 
 ---
 
@@ -16,7 +16,7 @@ Built with Laravel, Livewire, Filament and the Laravel AI SDK. Fork it, edit you
 - **Built-in limits.** Per-visitor rate limits (per minute and per day), a message length cap and a maximum conversation length keep costs predictable. API keys never reach the browser.
 - **SEO, GEO and AI discoverability out of the box.** JSON-LD structured data, a sitemap, an Atom feed, `robots.txt`, `llms.txt`, `llms-full.txt` and a markdown version of every page. See [SEO and AI discoverability](#seo-geo-and-ai-discoverability).
 - **A design with personality.** A warm "paper" theme with hand-drawn doodles, scroll reveals and a dark mode, all respecting `prefers-reduced-motion`.
-- **Fork-friendly.** No personal information is hardcoded. Your identity comes from `.env`, everything else from the admin panel.
+- **Fork-friendly.** No personal information is hardcoded. Your identity, the AI chat, the floating chat widget and the site limits are edited in the admin panel. `.env` only holds secrets and server settings.
 
 ## Tech stack
 
@@ -48,34 +48,31 @@ Then:
 
 1. Add your AI provider key to `.env` (`ANTHROPIC_API_KEY=...`). Without it the site works, but the chat shows a friendly error.
 2. Open `/admin` and sign in. Only emails listed in `PORTFOLIO_ADMIN_EMAILS` can access the panel.
-3. Fill in your profile under **About**, then add projects, posts, skills and experience.
+3. Set your name and headline under **Settings › Site settings**, fill in your profile under **About**, then add projects, posts, skills and experience.
 
 ## Making it yours
 
-### 1. Your identity (`.env`)
+### 1. Your server settings (`.env`)
 
-Every variable is documented in [`.env.example`](.env.example). The ones you will want to change first:
+`.env` only holds secrets and server-level settings. Every variable is documented in [`.env.example`](.env.example). The ones you will want to change first:
 
 | Variable | What it does |
 | --- | --- |
 | `APP_URL` | Your public URL. Canonical URLs, the sitemap, `llms.txt` and structured data are built from it. |
-| `PORTFOLIO_OWNER_NAME` | Your name, used across the site, the AI's instructions and structured data. |
-| `PORTFOLIO_HEADLINE` | The line after "Hi, I'm {name} —". Wrap a phrase in `*asterisks*` to give it a hand-drawn marker highlight, e.g. `a Laravel developer who builds with *AI*`. |
-| `PORTFOLIO_TAGLINE` | The home page intro and its meta description. |
-| `PORTFOLIO_DEFAULT_THEME` | `light` or `dark` for first-time visitors. Visitors can switch with the navbar toggle. |
 | `PORTFOLIO_ADMIN_EMAILS` | Comma-separated emails allowed into `/admin`. |
-| `PORTFOLIO_SOURCE_URL` | Optional link to your fork, shown in the footer. |
+| `AI_PROVIDER`, `ANTHROPIC_API_KEY`... | The AI provider and its API key. |
 
 To create an admin account on a server, run `php artisan make:filament-user` with an email that is in `PORTFOLIO_ADMIN_EMAILS`.
 
-### 2. Your content (`/admin`)
+### 2. Your settings and content (`/admin`)
 
 | Section | Contents |
 | --- | --- |
+| **Site settings** | Your name, default theme and source link; the home page greeting, headline, highlighted phrase (drawn with a hand-drawn marker), tagline, floating notes and the floating stickers around the chat (your own text and colors, or your first four skills); the AI chat's header, robot avatar, model and timeout; the floating chat widget (on/off, position, button label, note); chat and contact limits; AI training crawlers |
 | **About** | Headline, bio, location, availability, avatar, resume, share image, email and social links |
 | **Projects** | Write-ups in markdown, tech stack, links, thumbnail, featured flag, display order, SEO overrides, publish date |
 | **Posts** | Markdown posts with tags, cover image, SEO overrides and a publish date (schedule posts by picking a future date) |
-| **Skills** | Grouped by category, drag to reorder |
+| **Skills** | Grouped by category, drag to reorder. Unless you pick your own stickers in Site settings, the first four float around the home page chat on wide screens |
 | **Experience** | Roles, companies and dates (leave the end date empty for your current role) |
 | **Messages** | Contact form submissions and leads saved by the AI assistant |
 | **Chat logs** | Read-only transcripts of visitor conversations |
@@ -95,20 +92,21 @@ The chat is a Livewire component ([`app/Livewire/Chat.php`](app/Livewire/Chat.ph
 ```dotenv
 AI_PROVIDER=anthropic
 ANTHROPIC_API_KEY=sk-...
-PORTFOLIO_CHAT_MODEL=claude-haiku-5-5
 ```
 
-Any text provider supported by the Laravel AI SDK works (OpenAI, Gemini, Groq, Mistral, Ollama, OpenRouter, any OpenAI-compatible endpoint...). Set `AI_PROVIDER`, that provider's API key and a matching `PORTFOLIO_CHAT_MODEL`. Provider settings live in [`config/ai.php`](config/ai.php).
+Any text provider supported by the Laravel AI SDK works (OpenAI, Gemini, Groq, Mistral, Ollama, OpenRouter, any OpenAI-compatible endpoint...). Set `AI_PROVIDER` and that provider's API key in `.env`, then pick a matching model under **Settings › Site settings › AI chat** (default `claude-haiku-5-5`). Provider settings live in [`config/ai.php`](config/ai.php).
 
-**Limits** (all configurable in `.env`)
+**Avatar.** The assistant's avatar is an animated robot from [robot-heads](https://www.npmjs.com/package/robot-heads). Its face follows the chat: thinking while it waits, speaking while it streams, and an error face when something goes wrong. Pick its shape and colors in Site settings.
 
-| Variable | Default |
+**Limits** (all configurable in Site settings)
+
+| Setting | Default |
 | --- | --- |
-| `PORTFOLIO_CHAT_RATE_LIMIT_PER_MINUTE` | 10 messages per visitor |
-| `PORTFOLIO_CHAT_RATE_LIMIT_PER_DAY` | 50 messages per visitor |
-| `PORTFOLIO_CHAT_MAX_MESSAGE_LENGTH` | 500 characters |
-| `PORTFOLIO_CHAT_MAX_TURNS` | 20 questions per conversation |
-| `PORTFOLIO_CHAT_TIMEOUT` | 30 seconds |
+| Messages per minute | 10 messages per visitor |
+| Messages per day | 50 messages per visitor |
+| Max message length | 500 characters |
+| Questions per conversation | 20 |
+| Timeout | 30 seconds |
 
 **Privacy.** Conversations are stored so you can read them under **Chat logs**, and visitors are told so under the chat box. Visitor IPs are never stored in plain text: they are hashed with your app key.
 
@@ -137,7 +135,7 @@ Everything below is generated from your content. There is nothing to configure b
 
 AI *search* bots (`OAI-SearchBot`, `ChatGPT-User`, `Claude-SearchBot`, `Claude-User`, `PerplexityBot`...) are always allowed, because that is how your site gets cited and linked in AI answers.
 
-AI *training* bots (`GPTBot`, `ClaudeBot`, `Google-Extended`, `CCBot`...) are allowed by default, since a portfolio usually wants maximum visibility. Set `PORTFOLIO_ALLOW_AI_TRAINING=false` to block them. Both bot lists are in [`config/portfolio.php`](config/portfolio.php), so you can update them as vendors add new crawlers.
+AI *training* bots (`GPTBot`, `ClaudeBot`, `Google-Extended`, `CCBot`...) are allowed by default, since a portfolio usually wants maximum visibility. Turn off **Allow AI training crawlers** in Site settings to block them. Both bot lists are in [`config/portfolio.php`](config/portfolio.php), so you can update them as vendors add new crawlers.
 
 `robots.txt` is generated by a route, so don't add a static `public/robots.txt` (it would take precedence).
 
@@ -171,7 +169,7 @@ app/
 ├── Livewire/Chat.php              # The streaming chat
 ├── Livewire/Pages/                # Public pages
 └── Support/Seo/                   # Structured data, markdown presenters, llms.txt, caching
-config/portfolio.php               # Everything you can configure from .env
+config/portfolio.php               # Defaults for the admin's Site settings, plus the AI bot lists
 resources/views/                   # Blade views, doodles and illustrations
 ```
 

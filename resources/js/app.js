@@ -1,3 +1,5 @@
+import './robot-head'
+
 /**
  * Scroll reveals: adds `is-visible` to [data-reveal] elements as they scroll into view.
  * Runs again after wire:navigate page changes and whenever Livewire adds new content.

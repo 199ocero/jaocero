@@ -21,9 +21,9 @@ You don't need an AI provider key to work on most of the site. The test suite ne
 
 ## Making changes
 
-- **Keep it fork-friendly.** Never hardcode personal information (names, links, bios). Identity belongs in `config/portfolio.php` (backed by `.env`), content belongs in the database.
+- **Keep it fork-friendly.** Never hardcode personal information (names, links, bios). Identity and site settings belong in `config/portfolio.php` (defaults) and the `SiteSetting` model (edited in `/admin`), content belongs in the database.
 - **Follow the existing conventions.** Look at sibling files before adding new ones: class-based Livewire components in `app/Livewire`, semantic Tailwind color tokens (`bg-canvas`, `text-muted`, `text-accent`...) rather than raw palette colors, and the `php artisan make:*` commands for new classes.
-- **New configuration** goes in `config/portfolio.php` with a documented entry in `.env.example`.
+- **New configuration** goes in `config/portfolio.php`. Settings the owner should edit get a `SiteSetting` column and a field in `ManageSettings`; secrets and server-level values get a documented entry in `.env.example`.
 - **No new dependencies** without discussing them in an issue first.
 - **Respect reduced motion and accessibility:** animations must be disabled under `prefers-reduced-motion`, and interactive elements need visible focus states and labels.
 
