@@ -37,6 +37,17 @@ class Chat extends Component
     ];
 
     /**
+     * Quick follow-ups offered under the composer once a conversation has started, keyed by chip label.
+     *
+     * @var array<string, string>
+     */
+    public const array FOLLOW_UP_QUESTIONS = [
+        'Tell me more' => 'Tell me more about that.',
+        'Best project' => 'Which project are you most proud of, and why?',
+        'Get in touch' => 'How can I get in touch with you?',
+    ];
+
+    /**
      * A friendly error shown under the conversation (validation, limits, provider failures).
      */
     public string $error = '';

@@ -30,3 +30,16 @@ it('splits text into plain and highlighted segments', function () {
         ['text' => 'daily', 'highlighted' => false],
     ]);
 });
+
+it('marks the first occurrence of a phrase, keeping its original casing', function () {
+    expect(Highlight::mark('A developer who builds with AI and ai tools', 'ai'))
+        ->toBe('A developer who builds with *AI* and ai tools');
+});
+
+it('leaves the text alone when the phrase is blank, missing or the text marks its own', function (?string $phrase, string $text) {
+    expect(Highlight::mark($text, $phrase))->toBe($text);
+})->with([
+    'blank phrase' => [null, 'builds with AI'],
+    'missing phrase' => ['Rust', 'builds with AI'],
+    'already marked' => ['builds', 'builds with *AI*'],
+]);

@@ -191,3 +191,29 @@ it('renders the chat on the home page', function () {
         ->assertSeeLivewire(Chat::class)
         ->assertSee('What have you built?');
 });
+
+it('shows the header title and subtitle from the settings with the owner name filled in', function () {
+    config()->set('portfolio.owner_name', 'Sam Rivera');
+    config()->set('portfolio.chat.title', 'Ask {name}');
+    config()->set('portfolio.chat.subtitle', 'Powered by {name}\'s work');
+
+    Livewire::test(Chat::class)
+        ->assertSee('Ask Sam Rivera')
+        ->assertSee("Powered by Sam Rivera's work");
+});
+
+it('hides the header subtitle when it is empty', function () {
+    config()->set('portfolio.chat.subtitle', null);
+
+    Livewire::test(Chat::class)->assertDontSee('real projects and experience');
+});
+
+it('shows the robot avatar in the configured shape and colors', function () {
+    config()->set('portfolio.chat.avatar.shape', 'circle');
+    config()->set('portfolio.chat.avatar.color', '#ff6600');
+
+    Livewire::test(Chat::class)
+        ->assertSeeHtml('<robot-head')
+        ->assertSeeHtml('shape="circle"')
+        ->assertSeeHtml('color="#ff6600"');
+});

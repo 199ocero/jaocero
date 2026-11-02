@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\SiteSetting;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -24,6 +26,19 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->applySiteSettings();
+    }
+
+    /**
+     * Override config('portfolio.*') with the site settings saved in the admin panel.
+     */
+    protected function applySiteSettings(): void
+    {
+        try {
+            SiteSetting::query()->first()?->applyToConfig();
+        } catch (QueryException) {
+            // The settings table does not exist yet (fresh install, before migrations): keep the config defaults.
+        }
     }
 
     /**

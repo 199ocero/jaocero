@@ -59,7 +59,7 @@ class ManageAbout extends Page
                 Section::make('Profile')
                     ->schema([
                         TextInput::make('headline')
-                            ->helperText('Shown on the About page. The home page hero uses PORTFOLIO_HEADLINE from your .env.')
+                            ->helperText('Shown on the About page. The home page hero uses the headline in Site settings.')
                             ->maxLength(255),
                         Textarea::make('bio')
                             ->helperText('Plain text. Blank lines start new paragraphs.')

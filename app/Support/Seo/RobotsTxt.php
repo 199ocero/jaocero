@@ -6,7 +6,7 @@ namespace App\Support\Seo;
  * Builds /robots.txt from config('portfolio.seo').
  *
  * AI search and assistant bots are always allowed, because that is how the site gets
- * cited and linked in AI answers. AI training bots follow PORTFOLIO_ALLOW_AI_TRAINING.
+ * cited and linked in AI answers. AI training bots follow the site settings in the admin panel.
  */
 class RobotsTxt
 {
@@ -29,8 +29,8 @@ class RobotsTxt
                 self::bots('ai_training_bots'),
                 allow: $allowTraining,
                 comment: $allowTraining
-                    ? 'AI training bots: allowed (PORTFOLIO_ALLOW_AI_TRAINING=true).'
-                    : 'AI training bots: blocked (PORTFOLIO_ALLOW_AI_TRAINING=false).',
+                    ? 'AI training bots: allowed.'
+                    : 'AI training bots: blocked.',
             ),
         ];
 

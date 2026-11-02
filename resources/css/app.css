@@ -75,6 +75,13 @@
         }
     }
 
+    /* The wrapping marker sweeps in from left to right, line by line. */
+    @keyframes marker-sweep {
+        from {
+            background-size: 0% 0.9em;
+        }
+    }
+
     /* A design-tool style cursor wandering around the hero. */
     @keyframes cursor-glide {
         0%,
@@ -252,9 +259,28 @@
         }
     }
 
+    /*
+     * The marker for long phrases: a highlighter stroke that wraps across lines with the text
+     * instead of one tilted block, so it never juts out past the headline.
+     */
+    .marker-wrap {
+        @apply px-[0.12em] text-on-accent;
+        background-image: linear-gradient(var(--accent), var(--accent));
+        background-repeat: no-repeat;
+        background-position: 0 65%;
+        background-size: 100% 0.9em;
+        border-radius: 0.5em 0.25em 0.55em 0.3em / 0.4em 0.55em 0.3em 0.5em;
+        -webkit-box-decoration-break: clone;
+        box-decoration-break: clone;
+    }
+
     @media (prefers-reduced-motion: no-preference) {
         .marker-animated::before {
             animation: marker-draw 0.6s cubic-bezier(0.65, 0, 0.35, 1) var(--marker-delay, 0.5s) both;
+        }
+
+        .marker-wrap.marker-animated {
+            animation: marker-sweep 0.8s cubic-bezier(0.65, 0, 0.35, 1) var(--marker-delay, 0.5s) both;
         }
     }
 

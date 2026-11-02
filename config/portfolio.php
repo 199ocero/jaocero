@@ -7,36 +7,59 @@ return [
     | Portfolio Owner
     |--------------------------------------------------------------------------
     |
-    | The basic identity of the person this portfolio belongs to. Everything
-    | else (bio, projects, skills, experience...) is managed in the admin
-    | panel, so forking this project only requires editing your `.env`.
+    | Defaults for the site settings edited in the admin panel (Settings ›
+    | Site settings). Once those are saved, the stored values override
+    | everything in this file that has a matching settings field.
     |
     */
 
-    'owner_name' => env('PORTFOLIO_OWNER_NAME', 'Alex Morgan'),
+    'owner_name' => 'Alex Morgan',
 
-    // Wrap a phrase in *asterisks* to give it a hand-drawn marker highlight on the home page.
-    'headline' => env('PORTFOLIO_HEADLINE', 'a Laravel developer who builds with *AI*'),
+    /*
+     * The home page hero reads "{greeting} {headline}". The highlighted phrase (or a phrase
+     * wrapped in *asterisks* in the headline) gets a hand-drawn marker highlight.
+     */
+    'headline' => 'a Laravel developer who builds with AI',
 
-    'tagline' => env(
-        'PORTFOLIO_TAGLINE',
-        'My corner of the internet: a portfolio you can talk to. Ask my AI anything about my work.',
-    ),
+    'headline_highlight' => 'AI',
 
-    'site_url' => env('PORTFOLIO_SITE_URL', env('APP_URL', 'http://localhost')),
+    /*
+     * The rest of the home page hero. {name} is replaced with the owner's name.
+     * Leave a note or the cursor label empty to hide it.
+     */
+    'hero' => [
+        'greeting' => "Hi, I'm {name} —",
+        'note' => 'hi there!',
+        'chat_note' => 'psst… ask my AI anything',
+        'cursor_label' => 'you?',
 
-    'assistant_name' => env('PORTFOLIO_ASSISTANT_NAME', 'AI assistant'),
+        /*
+         * Tappable stickers floating around the chat on wide screens ("xl" = 1280px+, "2xl" = 1536px+).
+         * Up to four items of ['text' => ..., 'color' => sky|amber|lime|rose]. Empty: your first four skills.
+         */
+        'stickers' => [
+            'enabled' => true,
+            'items' => [],
+            'breakpoint' => 'xl',
+        ],
+    ],
+
+    'tagline' => 'My corner of the internet: a portfolio you can talk to. Ask my AI anything about my work.',
+
+    'site_url' => env('APP_URL', 'http://localhost'),
+
+    'assistant_name' => 'AI assistant',
 
     /*
      * The theme first-time visitors see: "light" (warm paper) or "dark".
      * Visitors can switch with the toggle in the navbar.
      */
-    'default_theme' => env('PORTFOLIO_DEFAULT_THEME', 'light') === 'dark' ? 'dark' : 'light',
+    'default_theme' => 'light',
 
     /*
      * Optional link to this site's source code, shown in the footer.
      */
-    'source_url' => env('PORTFOLIO_SOURCE_URL'),
+    'source_url' => null,
 
     /*
     |--------------------------------------------------------------------------
@@ -58,22 +81,51 @@ return [
     | AI Chat
     |--------------------------------------------------------------------------
     |
-    | Provider and model used by the portfolio assistant, plus the safety and
-    | cost limits applied to every visitor. Providers are configured in
-    | config/ai.php; API keys never leave the server.
+    | The model used by the portfolio assistant, plus the safety and cost
+    | limits applied to every visitor. The provider and its API key stay in
+    | .env (config/ai.php), so secrets never reach the database.
     |
     */
 
     'chat' => [
         'provider' => env('PORTFOLIO_CHAT_PROVIDER', env('AI_PROVIDER', 'anthropic')),
-        'model' => env('PORTFOLIO_CHAT_MODEL', 'claude-haiku-5-5'),
-        'timeout' => (int) env('PORTFOLIO_CHAT_TIMEOUT', 30),
-        'max_message_length' => (int) env('PORTFOLIO_CHAT_MAX_MESSAGE_LENGTH', 500),
-        'max_turns' => (int) env('PORTFOLIO_CHAT_MAX_TURNS', 20),
+        'model' => 'claude-haiku-5-5',
+        'timeout' => 30,
+        'max_message_length' => 500,
+        'max_turns' => 20,
         'rate_limit' => [
-            'per_minute' => (int) env('PORTFOLIO_CHAT_RATE_LIMIT_PER_MINUTE', 10),
-            'per_day' => (int) env('PORTFOLIO_CHAT_RATE_LIMIT_PER_DAY', 50),
+            'per_minute' => 10,
+            'per_day' => 50,
         ],
+
+        // The chat header. {name} is replaced with the owner's name.
+        'title' => "{name}'s AI assistant",
+        'subtitle' => "Answers from {name}'s real projects and experience",
+
+        // The assistant's robot-heads avatar (https://www.npmjs.com/package/robot-heads).
+        'avatar' => [
+            'shape' => 'rectangle',
+            'color' => '#2b49a3',
+            'trim_color' => '#93a6c8',
+            'screen_color' => '#e8f2ff',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Floating Chat Widget
+    |--------------------------------------------------------------------------
+    |
+    | The chat button shown on every page except home. Leave the note empty
+    | to hide the hand-written nudge next to the button.
+    |
+    */
+
+    'chat_widget' => [
+        'enabled' => true,
+        'position' => 'bottom-right',
+        'label' => 'Ask my AI',
+        'note' => 'psst… still here',
     ],
 
     /*
@@ -84,8 +136,8 @@ return [
 
     'contact' => [
         'rate_limit' => [
-            'max_attempts' => (int) env('PORTFOLIO_CONTACT_RATE_LIMIT', 3),
-            'decay_minutes' => (int) env('PORTFOLIO_CONTACT_RATE_LIMIT_DECAY_MINUTES', 10),
+            'max_attempts' => 3,
+            'decay_minutes' => 10,
         ],
     ],
 
@@ -95,15 +147,16 @@ return [
     |--------------------------------------------------------------------------
     |
     | AI search bots (which cite and link to your site) are always allowed.
-    | AI training bots can be opted out of via PORTFOLIO_ALLOW_AI_TRAINING.
+    | AI training bots can be opted out of in the admin panel's site settings.
     | Update these lists as vendors introduce new crawler user agents.
     |
     */
 
     'seo' => [
-        'allow_ai_training' => (bool) env('PORTFOLIO_ALLOW_AI_TRAINING', true),
+        'allow_ai_training' => true,
 
-        'default_og_image' => env('PORTFOLIO_DEFAULT_OG_IMAGE', '/og-image.png'),
+        // Fallback social share image. Uploading a share image in the admin's About page overrides it.
+        'default_og_image' => '/og-image.png',
 
         'ai_search_bots' => [
             'OAI-SearchBot',

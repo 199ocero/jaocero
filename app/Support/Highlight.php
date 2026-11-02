@@ -6,8 +6,9 @@ use Illuminate\Support\HtmlString;
 
 /**
  * Supports a tiny bit of markup in config text: wrap a phrase in *asterisks*
- * (e.g. PORTFOLIO_HEADLINE="a Laravel developer who builds with *AI*")
- * to draw a hand-drawn marker highlight behind it.
+ * (e.g. the headline "a Laravel developer who builds with *AI*", or a headline
+ * plus the highlighted phrase from Site settings, see mark()) to draw a
+ * hand-drawn marker highlight behind it.
  */
 class Highlight
 {
@@ -43,6 +44,24 @@ class Highlight
         }
 
         return $segments;
+    }
+
+    /**
+     * Mark the first occurrence of a phrase with *asterisks*, unless the text already marks its own.
+     */
+    public static function mark(?string $text, ?string $phrase): string
+    {
+        $text = (string) $text;
+        $phrase = trim((string) $phrase);
+        $position = $phrase === '' ? false : mb_stripos($text, $phrase);
+
+        if ($position === false || str_contains($text, '*')) {
+            return $text;
+        }
+
+        $length = mb_strlen($phrase);
+
+        return mb_substr($text, 0, $position).'*'.mb_substr($text, $position, $length).'*'.mb_substr($text, $position + $length);
     }
 
     /**
