@@ -1,0 +1,55 @@
+name: Bug report
+description: Something isn't working as expected.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! For security issues, please follow SECURITY.md instead of opening an issue.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, and what you expected to happen instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See the error
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - AI chat
+        - Public pages
+        - Admin panel
+        - SEO / llms.txt / feeds
+        - Setup and configuration
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error messages or logs
+      description: Paste any relevant errors from the browser console or `storage/logs/laravel.log`. Remove API keys and personal data first.
+      render: shell
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: PHP version, database, browser, and AI provider and model if relevant.
+      placeholder: PHP 8.4, SQLite, Chrome 140, anthropic / claude-haiku-5-5
+  - type: input
+    id: commit
+    attributes:
+      label: Commit or version
+      description: The commit you are running (`git rev-parse --short HEAD`).

@@ -1,0 +1,327 @@
+@import 'tailwindcss';
+
+@source '../views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+/* Class-based dark mode so visitors can toggle it. The default comes from PORTFOLIO_DEFAULT_THEME. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-hand: var(--font-caveat), 'Comic Sans MS', cursive;
+
+    --animate-fade-up: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+    --animate-message-in: message-in 0.25s ease-out both;
+    --animate-wiggle: wiggle 2.4s ease-in-out infinite;
+    --animate-word: word-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+    --animate-float: float 6s ease-in-out infinite;
+    --animate-pop: pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    --animate-cursor: cursor-glide 14s ease-in-out infinite;
+    --animate-fly: fly 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+    @keyframes fade-up {
+        from {
+            opacity: 0;
+            transform: translateY(14px);
+        }
+    }
+
+    @keyframes message-in {
+        from {
+            opacity: 0;
+            transform: translateY(6px) scale(0.98);
+        }
+    }
+
+    /* The marker highlight "draws" itself from left to right. */
+    @keyframes marker-draw {
+        from {
+            clip-path: inset(0 100% 0 0 round 0.35em);
+        }
+        to {
+            clip-path: inset(0 0 0 0 round 0.35em);
+        }
+    }
+
+    /* Headline words rise and come into focus one by one. */
+    @keyframes word-in {
+        from {
+            opacity: 0;
+            transform: translateY(0.35em);
+            filter: blur(8px);
+        }
+    }
+
+    /* Stickers and doodles bob gently. Set --tilt on the element to keep its rotation. */
+    @keyframes float {
+        0%,
+        100% {
+            transform: translateY(0) rotate(var(--tilt, 0deg));
+        }
+        50% {
+            transform: translateY(-9px) rotate(calc(var(--tilt, 0deg) + 2deg));
+        }
+    }
+
+    @keyframes pop {
+        0% {
+            transform: scale(1) rotate(var(--tilt, 0deg));
+        }
+        40% {
+            transform: scale(1.18) rotate(calc(var(--tilt, 0deg) - 10deg));
+        }
+        100% {
+            transform: scale(1) rotate(var(--tilt, 0deg));
+        }
+    }
+
+    /* A design-tool style cursor wandering around the hero. */
+    @keyframes cursor-glide {
+        0%,
+        100% {
+            transform: translate(0, 0);
+        }
+        25% {
+            transform: translate(-220px, 70px);
+        }
+        50% {
+            transform: translate(-120px, 190px);
+        }
+        75% {
+            transform: translate(60px, 110px);
+        }
+    }
+
+    @keyframes fly {
+        from {
+            opacity: 0;
+            transform: translate(-40px, 30px) rotate(-12deg) scale(0.9);
+        }
+    }
+
+    @keyframes wiggle {
+        0%,
+        100% {
+            transform: rotate(-3deg);
+        }
+        50% {
+            transform: rotate(3deg);
+        }
+    }
+}
+
+/*
+ * Semantic color tokens. Templates use these (bg-canvas, text-muted, border-line...)
+ * instead of raw palette colors, so the light "paper" and dark themes stay in sync.
+ */
+@theme inline {
+    --color-canvas: var(--canvas);
+    --color-surface: var(--surface);
+    --color-elevated: var(--elevated);
+    --color-fg: var(--fg);
+    --color-muted: var(--muted);
+    --color-subtle: var(--subtle);
+    --color-line: var(--line);
+    --color-accent: var(--accent);
+    --color-accent-strong: var(--accent-strong);
+    --color-accent-soft: var(--accent-soft);
+    --color-on-accent: var(--on-accent);
+}
+
+:root {
+    --canvas: #faf9f6;
+    --surface: #f3f1ec;
+    --elevated: #ffffff;
+    --fg: #2b2a28;
+    --muted: #54524e;
+    --subtle: #6f6c67;
+    --line: #e6e3dd;
+    --accent: #0a63e8;
+    --accent-strong: #084fc0;
+    --accent-soft: color-mix(in oklab, #0a63e8 10%, transparent);
+    --on-accent: #ffffff;
+
+    color-scheme: light;
+}
+
+.dark {
+    --canvas: #161514;
+    --surface: #1e1d1b;
+    --elevated: #242320;
+    --fg: #f3f1ec;
+    --muted: #bcb8b0;
+    --subtle: #98948c;
+    --line: #34322e;
+    --accent: #4f9dff;
+    --accent-strong: #7ab5ff;
+    --accent-soft: color-mix(in oklab, #4f9dff 14%, transparent);
+    --on-accent: #0d0d0c;
+
+    color-scheme: dark;
+}
+
+@layer base {
+    html {
+        @apply bg-canvas text-fg antialiased;
+        font-feature-settings: 'cv11', 'ss01';
+    }
+
+    h1,
+    h2,
+    h3 {
+        text-wrap: balance;
+    }
+
+    ::selection {
+        @apply bg-accent text-on-accent;
+    }
+
+    :focus-visible {
+        @apply outline-2 outline-offset-2 outline-accent;
+    }
+}
+
+@layer components {
+    /* Typography for rendered markdown (blog posts, project write-ups, chat answers). */
+    .prose-content {
+        @apply max-w-none text-base leading-7 text-muted;
+
+        & > * + * {
+            @apply mt-5;
+        }
+
+        & h2 {
+            @apply mt-10 text-2xl font-bold tracking-tight text-fg;
+        }
+
+        & h3 {
+            @apply mt-8 text-xl font-semibold text-fg;
+        }
+
+        & strong {
+            @apply font-semibold text-fg;
+        }
+
+        & a {
+            @apply font-medium text-accent underline decoration-accent/40 decoration-2 underline-offset-4 hover:decoration-accent;
+        }
+
+        & ul {
+            @apply list-disc space-y-2 pl-6 marker:text-accent;
+        }
+
+        & ol {
+            @apply list-decimal space-y-2 pl-6 marker:text-subtle;
+        }
+
+        & blockquote {
+            @apply border-l-2 border-accent pl-4 text-fg italic;
+        }
+
+        & code {
+            @apply rounded bg-surface px-1.5 py-0.5 font-mono text-[0.875em] text-fg;
+        }
+
+        & pre {
+            @apply overflow-x-auto rounded-2xl border border-line bg-surface p-4 text-sm leading-6;
+
+            & code {
+                @apply bg-transparent p-0;
+            }
+        }
+
+        & img {
+            @apply rounded-2xl border border-line;
+        }
+
+        & hr {
+            @apply border-line;
+        }
+    }
+
+    /* A hand-drawn marker highlight behind a word or phrase. */
+    .marker {
+        @apply relative inline-block px-[0.18em] text-on-accent;
+        isolation: isolate;
+
+        &::before {
+            content: '';
+            @apply absolute -inset-x-[0.06em] inset-y-[0.04em] -z-10 bg-accent;
+            border-radius: 0.55em 0.3em 0.6em 0.35em / 0.45em 0.6em 0.35em 0.55em;
+            transform: rotate(-1.5deg);
+        }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        .marker-animated::before {
+            animation: marker-draw 0.6s cubic-bezier(0.65, 0, 0.35, 1) var(--marker-delay, 0.5s) both;
+        }
+    }
+
+    /* Handwritten margin notes. */
+    .hand-note {
+        @apply font-hand text-xl leading-tight text-subtle;
+    }
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+/*
+ * Scroll reveals: elements with [data-reveal] fade up when they enter the viewport
+ * (see resources/js/app.js). Content stays visible without JavaScript or with reduced motion.
+ */
+@media (prefers-reduced-motion: no-preference) {
+    .js [data-reveal] {
+        opacity: 0;
+        transform: translateY(28px);
+        transition:
+            opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+            transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        transition-delay: var(--reveal-delay, 0ms);
+    }
+
+    .js [data-reveal].is-visible {
+        opacity: 1;
+        transform: none;
+    }
+
+    /* Hand-drawn doodles draw their strokes in once revealed. */
+    .js [data-reveal] .doodle-path {
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+        transition: stroke-dashoffset 1.4s cubic-bezier(0.65, 0, 0.35, 1);
+        transition-delay: calc(var(--reveal-delay, 0ms) + var(--draw-delay, 250ms));
+    }
+
+    .js [data-reveal].is-visible .doodle-path {
+        stroke-dashoffset: 0;
+    }
+
+    /* Draws doodles as soon as they render, for content that appears without scrolling (e.g. in the chat). */
+    .draw-on-render .doodle-path {
+        stroke-dasharray: 1;
+        animation: draw 1.4s cubic-bezier(0.65, 0, 0.35, 1) var(--draw-delay, 200ms) both;
+    }
+}
+
+@keyframes draw {
+    from {
+        stroke-dashoffset: 1;
+    }
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
