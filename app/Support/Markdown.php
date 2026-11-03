@@ -21,4 +21,16 @@ class Markdown
             'max_nesting_level' => 20,
         ]));
     }
+
+    /**
+     * Render markdown that is still being streamed in. A link that hasn't closed yet shows
+     * as its plain text, so the raw "[label](https://..." never flashes on screen.
+     */
+    public static function renderPartial(string $markdown): HtmlString
+    {
+        return static::render(preg_replace([
+            '/\[([^\]\n]*)\]\([^)\s]*$/',
+            '/\[([^\]\n]*)\]?$/',
+        ], '$1', $markdown));
+    }
 }

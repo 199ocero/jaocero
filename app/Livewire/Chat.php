@@ -7,6 +7,7 @@ use App\Enums\ChatRole;
 use App\Models\ChatConversation;
 use App\Support\Chat\ChatRateLimiter;
 use App\Support\Chat\VisitorFingerprint;
+use App\Support\Markdown;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -173,6 +174,9 @@ class Chat extends Component
 
     /**
      * Stream the answer into the page as it arrives and return the full text.
+     *
+     * Each chunk replaces the answer with the markdown rendered so far, so the streamed answer has exactly
+     * the markup of the saved message that replaces it, and nothing shifts when streaming ends.
      */
     private function streamAnswer(ChatConversation $conversation, string $question): string
     {
@@ -182,14 +186,13 @@ class Chat extends Component
             // Each tool-using step starts a new stream; separate its text from the previous step.
             if ($event instanceof StreamStart && trim($answer) !== '') {
                 $answer .= "\n\n";
-                $this->stream(to: 'answer', content: "\n\n");
             }
 
             if ($event instanceof TextDelta) {
                 $answer .= $event->delta;
 
-                // Livewire inserts streamed content as HTML, so it must be escaped.
-                $this->stream(to: 'answer', content: e($event->delta));
+                // Markdown escapes raw HTML, so the AI can't inject markup.
+                $this->stream(to: 'answer', content: (string) Markdown::renderPartial($answer), replace: true);
             }
         }
 

@@ -17,7 +17,7 @@ beforeEach(function () {
 
 /**
  * Livewire streams chunks by echoing and flushing JSON payloads. Collect them during
- * the call and return the streamed content exactly as the browser would insert it.
+ * the call and return the streamed content exactly as the browser would show it.
  */
 function sendChatMessage(mixed $component, string $text): string
 {
@@ -38,8 +38,8 @@ function sendChatMessage(mixed $component, string $text): string
     preg_match_all('/\{"stream":true.*?"endStream":true\}/', $output, $payloads);
 
     return collect($payloads[0])
-        ->map(fn (string $payload): string => json_decode($payload, true)['body']['content'])
-        ->implode('');
+        ->map(fn (string $payload): array => json_decode($payload, true)['body'])
+        ->reduce(fn (string $shown, array $chunk): string => ($chunk['mode'] ?? null) === 'replace' ? $chunk['content'] : $shown.$chunk['content'], '');
 }
 
 it('shows the suggested questions and storage note before the first message', function () {
@@ -60,7 +60,7 @@ it('streams the answer and logs both messages', function () {
     $component->assertSet('error', '')
         ->assertSee('<strong>Helpdesk Copilot</strong>', false);
 
-    expect($streamed)->toBe('Sam built **Helpdesk Copilot**.');
+    expect(trim($streamed))->toBe('<p>Sam built <strong>Helpdesk Copilot</strong>.</p>');
 
     $conversation = ChatConversation::sole();
 
@@ -70,7 +70,7 @@ it('streams the answer and logs both messages', function () {
     ]);
 });
 
-it('escapes HTML in streamed chunks', function () {
+it('escapes HTML in the streamed answer', function () {
     PortfolioAgent::fake(['<img src=x onerror=alert(1)>']);
 
     $streamed = sendChatMessage(Livewire::test(Chat::class), 'Hello');

@@ -17,14 +17,17 @@
 @endphp
 
 {{--
-    A minimal chat in the style of Claude / ChatGPT: a centered greeting with the composer right under it,
-    then a single column thread where the visitor's messages sit in soft bubbles and the answers read as plain text.
+    A minimal chat in the style of Claude / ChatGPT: the composer stays pinned to the bottom, with a centered greeting
+    above it until the first message, then a single column thread where the visitor's messages sit in soft bubbles and
+    the answers read as plain text. The streamed answer uses the same markup as the saved message that replaces it,
+    so nothing shifts or re-animates when streaming ends.
 --}}
 <section
     x-data="{
         draft: '',
         pending: null,
         answering: false,
+        stickToBottom: true,
         maxLength: {{ $maxLength }},
         init() {
             new MutationObserver(() => {
@@ -32,6 +35,15 @@
                 this.scrollToBottom()
             })
                 .observe(this.$refs.answer, { childList: true, characterData: true, subtree: true })
+
+            this.$nextTick(() => this.scrollToBottom(true))
+
+            {{-- x-show hides on the next frame, which would flash the streamed answer under the saved one. Hide it in the same tick as the morph instead. --}}
+            $wire.interceptMessage(({ onSuccess }) => {
+                onSuccess(({ onMorphed }) => onMorphed(() => {
+                    if (this.pending !== null) this.$refs.pending.style.display = 'none'
+                }))
+            })
         },
         async submit(text = null) {
             text = (text ?? this.draft).trim()
@@ -40,7 +52,7 @@
             this.pending = text
             this.draft = ''
             this.$refs.answer.innerHTML = ''
-            this.$nextTick(() => this.scrollToBottom())
+            this.$nextTick(() => this.scrollToBottom(true))
 
             try {
                 await $wire.send(text)
@@ -57,8 +69,16 @@
 
             return $wire.error !== '' ? 'error' : 'idle'
         },
-        scrollToBottom() {
-            this.$refs.log.scrollTop = this.$refs.log.scrollHeight
+        {{-- Follow the answer while the visitor is at the bottom, but let them scroll up to read without being pulled back. --}}
+        followScroll() {
+            const log = this.$refs.log
+
+            this.stickToBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 64
+        },
+        scrollToBottom(force = false) {
+            if (force) this.stickToBottom = true
+
+            if (this.stickToBottom) this.$refs.log.scrollTop = this.$refs.log.scrollHeight
         },
     }"
     aria-label="Chat with {{ $title }}"
@@ -101,131 +121,24 @@
         </div>
     </header>
 
-    {{-- While the chat is empty, the greeting and the composer sit centered together. --}}
-    <div @class(['flex min-h-0 flex-1 flex-col', 'justify-center' => $isEmpty])>
-        {{-- Conversation --}}
-        <div
-            x-ref="log"
-            role="log"
-            aria-live="polite"
-            x-bind:aria-busy="pending !== null"
-            @class(['min-h-0 overflow-y-auto overscroll-contain scroll-smooth', 'flex-1' => ! $isEmpty])
-            @if ($isEmpty) x-bind:class="{ 'flex-1': pending !== null }" @endif
-        >
-            <div class="mx-auto flex w-full max-w-3xl flex-col gap-7 px-4 py-6 sm:px-6">
-                @if ($isEmpty)
-                    <div x-show="pending === null" class="flex flex-col items-center gap-3 pt-2 text-center motion-safe:animate-fade-up">
-                        <x-robot-head :size="$compact ? 56 : 64" state="happy" />
-                        <h2 @class(['font-semibold tracking-tight text-balance', 'text-xl' => $compact, 'text-2xl sm:text-[1.75rem]' => ! $compact])>Hi, I'm {{ $firstName }}'s AI. How can I help?</h2>
-                        <p class="max-w-md text-sm text-pretty text-muted">Ask me anything about {{ $ownerName }}'s work, skills, or availability.</p>
-                    </div>
-                @endif
+    {{-- Conversation --}}
+    <div
+        x-ref="log"
+        x-on:scroll.passive="followScroll()"
+        role="log"
+        aria-live="polite"
+        x-bind:aria-busy="pending !== null"
+        class="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+    >
+        <div class="mx-auto flex min-h-full w-full max-w-3xl flex-col gap-7 px-4 py-6 sm:px-6">
+            @if ($isEmpty)
+                <div x-show="pending === null" class="my-auto flex flex-col items-center gap-3 text-center motion-safe:animate-fade-up">
+                    <x-robot-head :size="$compact ? 56 : 64" state="happy" />
+                    <h2 @class(['font-semibold tracking-tight text-balance', 'text-xl' => $compact, 'text-2xl sm:text-[1.75rem]' => ! $compact])>Hey, I'm {{ $firstName }}! Well, the AI version of me.</h2>
+                    <p class="max-w-md text-sm text-pretty text-muted">Ask me anything about my work, what I'm into, or whether I'm free for your project.</p>
 
-                @foreach ($messages as $message)
-                    @if ($message->role === \App\Enums\ChatRole::User)
-                        <div wire:key="message-{{ $message->id }}" class="flex justify-end motion-safe:animate-message-in">
-                            <p class="max-w-[85%] rounded-3xl bg-surface px-4 py-2.5 text-[0.9375rem] leading-6 whitespace-pre-wrap">{{ $message->content }}</p>
-                        </div>
-                    @else
-                        <div wire:key="message-{{ $message->id }}" class="flex items-start gap-3 motion-safe:animate-message-in">
-                            <x-robot-head :size="28" paused :interactive="false" class="mt-0.5" />
-                            <div class="prose-content min-w-0 flex-1 text-[0.9375rem] leading-7 [&>*+*]:mt-3">
-                                {{ \App\Support\Markdown::render($message->content) }}
-                            </div>
-                        </div>
-                    @endif
-                @endforeach
-
-                {{-- The visitor's message (shown instantly) and the streaming answer. --}}
-                <div x-show="pending !== null" x-cloak class="flex flex-col gap-7">
-                    <div class="flex justify-end">
-                        <p x-text="pending" class="max-w-[85%] rounded-3xl bg-surface px-4 py-2.5 text-[0.9375rem] leading-6 whitespace-pre-wrap"></p>
-                    </div>
-                    <div class="flex items-start gap-3">
-                        <x-robot-head :size="28" :interactive="false" x-bind:state="avatarState()" class="mt-0.5" />
-                        <div class="min-w-0 flex-1 text-[0.9375rem] leading-7">
-                            <div x-ref="answer" wire:stream="answer" class="peer whitespace-pre-wrap text-fg"></div>
-                            <div class="hidden items-center gap-1 pt-2.5 peer-empty:flex" aria-label="The assistant is typing">
-                                <span class="size-1.5 animate-bounce rounded-full bg-subtle [animation-delay:-0.3s]"></span>
-                                <span class="size-1.5 animate-bounce rounded-full bg-subtle [animation-delay:-0.15s]"></span>
-                                <span class="size-1.5 animate-bounce rounded-full bg-subtle"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                @if ($error !== '')
-                    <div x-show="pending === null" role="alert" class="flex items-start gap-3">
-                        <x-robot-head :size="28" state="error" paused :interactive="false" class="mt-0.5" />
-                        <p class="min-w-0 flex-1 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm leading-6">
-                            {{ $error }}
-                            @if (! $turnLimitReached)
-                                <a href="{{ route('contact') }}" wire:navigate class="font-medium text-accent hover:underline">Contact page →</a>
-                            @endif
-                        </p>
-                    </div>
-                @endif
-            </div>
-        </div>
-
-        {{-- Composer --}}
-        <div class="shrink-0 px-3 pb-3 sm:px-4">
-            <div class="mx-auto w-full max-w-3xl">
-                @if ($turnLimitReached)
-                    <button type="button" wire:click="startNewChat" class="w-full rounded-full bg-fg px-4 py-3 text-sm font-semibold text-canvas transition hover:opacity-85">
-                        Start a new chat
-                    </button>
-                @else
-                    <form
-                        x-on:submit.prevent="submit()"
-                        x-on:click="if ($event.target === $el) $refs.input.focus()"
-                        class="cursor-text rounded-[1.6rem] border border-line bg-elevated shadow-[0_2px_10px_-4px_rgb(0_0_0/0.08)] transition focus-within:border-subtle/60 focus-within:shadow-[0_4px_18px_-6px_rgb(0_0_0/0.14)] dark:bg-surface dark:shadow-none"
-                    >
-                        <label for="{{ $inputId }}" class="sr-only">Your question</label>
-                        <textarea
-                            id="{{ $inputId }}"
-                            x-ref="input"
-                            x-model="draft"
-                            x-on:keydown.enter="if (! $event.shiftKey) { $event.preventDefault(); submit() }"
-                            maxlength="{{ $maxLength }}"
-                            rows="1"
-                            placeholder="Ask about projects, skills, availability…"
-                            class="field-sizing-content block max-h-40 min-h-12 w-full resize-none bg-transparent px-4 pt-3.5 pb-1 text-base text-fg placeholder:text-subtle focus:outline-none sm:text-[0.9375rem]"
-                        ></textarea>
-
-                        <div class="flex items-center justify-between gap-3 px-2.5 pb-2.5">
-                            <div class="flex min-w-0 gap-1 overflow-x-auto [scrollbar-width:none]">
-                                @unless ($isEmpty)
-                                    @foreach (\App\Livewire\Chat::FOLLOW_UP_QUESTIONS as $label => $question)
-                                        <button
-                                            type="button"
-                                            wire:key="follow-up-{{ $loop->index }}"
-                                            x-on:click="submit(@js($question))"
-                                            x-bind:disabled="pending !== null"
-                                            class="shrink-0 rounded-full border border-line px-3 py-1.5 text-xs font-medium whitespace-nowrap text-muted transition hover:bg-surface hover:text-fg disabled:opacity-50 dark:hover:bg-elevated"
-                                        >{{ $label }}</button>
-                                    @endforeach
-                                @endunless
-                            </div>
-
-                            <div class="flex shrink-0 items-center gap-2">
-                                <span x-show="draft.length > maxLength * 0.8" x-cloak x-text="`${draft.length}/${maxLength}`" class="text-xs text-subtle tabular-nums"></span>
-                                <button
-                                    type="submit"
-                                    x-bind:disabled="draft.trim() === '' || pending !== null"
-                                    class="grid size-9 place-items-center rounded-full bg-fg text-canvas transition hover:opacity-85 disabled:bg-line disabled:text-subtle disabled:hover:opacity-100"
-                                >
-                                    <span class="sr-only">Send</span>
-                                    <svg class="size-[1.1rem]" fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke="currentColor" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0-6 6m6-6 6 6" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-
-                    @if ($isEmpty)
-                        <ul x-show="pending === null" class="mt-3 flex flex-wrap justify-center gap-2" aria-label="Suggested questions">
+                    @unless ($turnLimitReached)
+                        <ul class="mt-3 flex flex-wrap justify-center gap-2" aria-label="Suggested questions">
                             @foreach (\App\Livewire\Chat::SUGGESTED_QUESTIONS as $question)
                                 <li wire:key="suggestion-{{ $loop->index }}">
                                     <button
@@ -245,11 +158,115 @@
                                 </li>
                             @endforeach
                         </ul>
-                    @endif
-                @endif
+                    @endunless
+                </div>
+            @endif
 
-                <p class="mt-2.5 text-center text-[0.7rem] text-subtle">Conversations may be stored to improve this site.</p>
+            @foreach ($messages as $message)
+                @if ($message->role === \App\Enums\ChatRole::User)
+                    <div wire:key="message-{{ $message->id }}" class="flex justify-end">
+                        <p class="max-w-[85%] rounded-3xl bg-surface px-4 py-2.5 text-[0.9375rem] leading-6 whitespace-pre-wrap">{{ $message->content }}</p>
+                    </div>
+                @else
+                    <div wire:key="message-{{ $message->id }}" class="flex items-start gap-3">
+                        <x-robot-head :size="28" paused :interactive="false" class="mt-0.5" />
+                        <div class="prose-content min-w-0 flex-1 text-[0.9375rem] leading-7 [&>*+*]:mt-3">
+                            {{ \App\Support\Markdown::render($message->content) }}
+                        </div>
+                    </div>
+                @endif
+            @endforeach
+
+            {{-- The visitor's message (shown instantly) and the streaming answer. --}}
+            <div x-ref="pending" x-show="pending !== null" x-cloak class="flex flex-col gap-7">
+                <div class="flex justify-end motion-safe:animate-message-in">
+                    <p x-text="pending" class="max-w-[85%] rounded-3xl bg-surface px-4 py-2.5 text-[0.9375rem] leading-6 whitespace-pre-wrap"></p>
+                </div>
+                <div class="flex items-start gap-3">
+                    <x-robot-head :size="28" :interactive="false" x-bind:state="avatarState()" class="mt-0.5" />
+                    <div class="min-w-0 flex-1 text-[0.9375rem] leading-7">
+                        <div x-ref="answer" wire:stream="answer" class="peer prose-content [&>*+*]:mt-3"></div>
+                        <div class="hidden items-center gap-1 pt-2.5 peer-empty:flex" aria-label="The assistant is typing">
+                            <span class="size-1.5 animate-bounce rounded-full bg-subtle [animation-delay:-0.3s]"></span>
+                            <span class="size-1.5 animate-bounce rounded-full bg-subtle [animation-delay:-0.15s]"></span>
+                            <span class="size-1.5 animate-bounce rounded-full bg-subtle"></span>
+                        </div>
+                    </div>
+                </div>
             </div>
+
+            @if ($error !== '')
+                <div x-show="pending === null" role="alert" class="flex items-start gap-3">
+                    <x-robot-head :size="28" state="error" paused :interactive="false" class="mt-0.5" />
+                    <p class="min-w-0 flex-1 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm leading-6">
+                        {{ $error }}
+                        @if (! $turnLimitReached)
+                            <a href="{{ route('contact') }}" wire:navigate class="font-medium text-accent hover:underline">Contact page →</a>
+                        @endif
+                    </p>
+                </div>
+            @endif
+        </div>
+    </div>
+
+    {{-- Composer --}}
+    <div class="shrink-0 px-3 pb-3 sm:px-4">
+        <div class="mx-auto w-full max-w-3xl">
+            @if ($turnLimitReached)
+                <button type="button" wire:click="startNewChat" class="w-full rounded-full bg-fg px-4 py-3 text-sm font-semibold text-canvas transition hover:opacity-85">
+                    Start a new chat
+                </button>
+            @else
+                <form
+                    x-on:submit.prevent="submit()"
+                    x-on:click="if ($event.target === $el) $refs.input.focus()"
+                    class="cursor-text rounded-[1.6rem] border border-line bg-elevated shadow-[0_2px_10px_-4px_rgb(0_0_0/0.08)] transition focus-within:border-subtle/60 focus-within:shadow-[0_4px_18px_-6px_rgb(0_0_0/0.14)] dark:bg-surface dark:shadow-none"
+                >
+                    <label for="{{ $inputId }}" class="sr-only">Your question</label>
+                    <textarea
+                        id="{{ $inputId }}"
+                        x-ref="input"
+                        x-model="draft"
+                        x-on:keydown.enter="if (! $event.shiftKey) { $event.preventDefault(); submit() }"
+                        maxlength="{{ $maxLength }}"
+                        rows="1"
+                        placeholder="Ask about projects, skills, availability…"
+                        class="field-sizing-content block max-h-40 min-h-12 w-full resize-none bg-transparent px-4 pt-3.5 pb-1 text-base text-fg placeholder:text-subtle focus:outline-none sm:text-[0.9375rem]"
+                    ></textarea>
+
+                    <div class="flex items-center justify-between gap-3 px-2.5 pb-2.5">
+                        <div class="flex min-w-0 gap-1 overflow-x-auto [scrollbar-width:none]">
+                            @unless ($isEmpty)
+                                @foreach (\App\Livewire\Chat::FOLLOW_UP_QUESTIONS as $label => $question)
+                                    <button
+                                        type="button"
+                                        wire:key="follow-up-{{ $loop->index }}"
+                                        x-on:click="submit(@js($question))"
+                                        x-bind:disabled="pending !== null"
+                                        class="shrink-0 rounded-full border border-line px-3 py-1.5 text-xs font-medium whitespace-nowrap text-muted transition hover:bg-surface hover:text-fg disabled:opacity-50 dark:hover:bg-elevated"
+                                    >{{ $label }}</button>
+                                @endforeach
+                            @endunless
+                        </div>
+
+                        <div class="flex shrink-0 items-center gap-2">
+                            <span x-show="draft.length > maxLength * 0.8" x-cloak x-text="`${draft.length}/${maxLength}`" class="text-xs text-subtle tabular-nums"></span>
+                            <button
+                                type="submit"
+                                x-bind:disabled="draft.trim() === '' || pending !== null"
+                                class="grid size-9 place-items-center rounded-full bg-fg text-canvas transition hover:opacity-85 disabled:bg-line disabled:text-subtle disabled:hover:opacity-100"
+                            >
+                                <span class="sr-only">Send</span>
+                                <svg class="size-[1.1rem]" fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0-6 6m6-6 6 6" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            @endif
+
+            <p class="mt-2.5 text-center text-[0.7rem] text-subtle">Conversations may be stored to improve this site.</p>
         </div>
     </div>
 </section>

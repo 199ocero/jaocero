@@ -22,3 +22,16 @@ it('strips unsafe link protocols', function () {
 it('renders an empty string for null input', function () {
     expect((string) Markdown::render(null))->toBe('');
 });
+
+it('shows an unfinished streamed link as its plain text', function (string $partial) {
+    expect(trim((string) Markdown::renderPartial($partial)))->toBe('<p>See Helpdesk</p>');
+})->with([
+    'url still streaming' => 'See [Helpdesk](https://exam',
+    'label closed, no url yet' => 'See [Helpdesk]',
+    'label still streaming' => 'See [Helpdesk',
+]);
+
+it('renders finished links while streaming', function () {
+    expect((string) Markdown::renderPartial('See [Helpdesk](https://example.com) and more'))
+        ->toContain('<a href="https://example.com">Helpdesk</a>');
+});

@@ -11,10 +11,11 @@
 let modules = null
 
 function loadModules() {
-    modules ??= Promise.all([import('react'), import('react-dom/client'), import('robot-heads')]).then(
-        ([react, reactDom, robotHeads]) => ({
+    modules ??= Promise.all([import('react'), import('react-dom'), import('react-dom/client'), import('robot-heads')]).then(
+        ([react, reactDom, reactDomClient, robotHeads]) => ({
             createElement: react.createElement,
-            createRoot: reactDom.createRoot,
+            flushSync: reactDom.flushSync,
+            createRoot: reactDomClient.createRoot,
             RobotHead: robotHeads.RobotHead,
         }),
     )
@@ -101,8 +102,9 @@ class RobotHeadElement extends HTMLElement {
     render() {
         if (!this.root) return
 
-        loadModules().then(({ createElement, RobotHead }) => {
-            this.root?.render(createElement(RobotHead, { ...this.props(), 'aria-hidden': true }))
+        // flushSync commits right away, so a head added by a Livewire morph is drawn in the same frame instead of popping in.
+        loadModules().then(({ createElement, flushSync, RobotHead }) => {
+            flushSync(() => this.root?.render(createElement(RobotHead, { ...this.props(), 'aria-hidden': true })))
         })
     }
 }

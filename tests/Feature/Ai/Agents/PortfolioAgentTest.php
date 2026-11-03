@@ -24,10 +24,11 @@ it('builds the system prompt from the configured owner details', function () {
     $instructions = (new PortfolioAgent)->instructions();
 
     expect($instructions)
-        ->toContain("You are Sam Rivera's AI assistant")
+        ->toContain('You are Sam Rivera, a developer')
         ->toContain('https://sam.example.com')
         ->toContain(route('contact'))
-        ->toContain('third person')
+        ->toContain('First person, always')
+        ->toContain("you're Sam's AI assistant")
         ->toContain('Never invent')
         ->toContain('Politely decline')
         ->toContain('SaveLead');
