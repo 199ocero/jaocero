@@ -9,9 +9,12 @@
 @endphp
 
 <header
-    x-data="{ open: false }"
+    x-data="{ open: false, scrolled: window.scrollY > 8 }"
     x-on:keydown.escape.window="open = false"
-    class="sticky top-0 z-40 bg-canvas/85 backdrop-blur-lg"
+    x-on:scroll.window.passive="scrolled = window.scrollY > 8"
+    {{-- Transparent over the sky at the top of the page; frosted glass once content scrolls beneath it. --}}
+    x-bind:class="scrolled || open ? 'bg-canvas/55 shadow-[0_1px_0_0_var(--line)] backdrop-blur-xl' : 'bg-transparent'"
+    class="sticky top-0 z-40 transition-[background-color,box-shadow] duration-300"
 >
     <nav class="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6" aria-label="Main">
         <a href="{{ route('home') }}" wire:navigate class="flex items-center gap-2.5 font-bold tracking-[-0.02em]">

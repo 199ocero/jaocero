@@ -37,6 +37,9 @@
                     document.documentElement.classList.add('js');
                 };
                 applyTheme();
+                // wire:navigate copies the server's <html> attributes (the default theme) onto the page.
+                // Re-apply right after the swap, before paint, so the theme never flips back and forth.
+                document.addEventListener('livewire:navigating', (event) => event.detail.onSwap(applyTheme));
                 document.addEventListener('livewire:navigated', applyTheme);
             })();
         </script>
@@ -44,7 +47,12 @@
         @fonts
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="flex min-h-dvh flex-col bg-canvas font-sans text-fg">
+    {{-- No body background: the page color comes from <html>, so the sky backdrop can show through. --}}
+    <body class="flex min-h-dvh flex-col font-sans text-fg">
+        @persist('sky')
+            <x-sky />
+        @endpersist
+
         <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-accent focus:px-4 focus:py-2 focus:text-on-accent">
             Skip to content
         </a>

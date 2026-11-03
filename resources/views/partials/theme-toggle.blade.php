@@ -3,8 +3,12 @@
     x-data="{
         dark: document.documentElement.classList.contains('dark'),
         toggle() {
+            const root = document.documentElement;
             this.dark = ! this.dark;
-            document.documentElement.classList.toggle('dark', this.dark);
+            root.classList.add('theme-transition');
+            root.classList.toggle('dark', this.dark);
+            clearTimeout(window.themeTransitionTimeout);
+            window.themeTransitionTimeout = setTimeout(() => root.classList.remove('theme-transition'), 750);
             try { localStorage.setItem('theme', this.dark ? 'dark' : 'light'); } catch (error) {}
         },
     }"
